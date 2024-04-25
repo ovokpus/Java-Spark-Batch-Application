@@ -3,6 +3,7 @@ package com.jmb.batchapp;
 import com.jmb.batchapp.exception.ExceptionHandler;
 import com.jmb.batchapp.job.Job;
 import com.jmb.batchapp.parameter.CommonJobParameter;
+import com.jmb.batchapp.parameter.JobsParameters;
 import com.jmb.batchapp.parameter.Parameters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +36,15 @@ public class SparkBatchApp implements CommandLineRunner {
 		LOGGER.info("Batch Application Finished");
 	}
 
-
 	@Override
-	public void run(String... args) throws Exception {
+	public void run(String... args) {
 		try {
 			LOGGER.info("Parsing common job arguments");
 			loadCommonParams(args);
 			LOGGER.info("Instantiating job");
 			Job job = (Job) context.getBean(parameters.getParamValue(CommonJobParameter.JOB_NAME), CommonJobParameter.JOB_NAME);
+			LOGGER.info("Loading Job Specific Arguments");
+			loadJobParams(args);
 			LOGGER.info("Executing job");
 			job.execute();
 		} catch (Exception be) {
@@ -53,5 +55,13 @@ public class SparkBatchApp implements CommandLineRunner {
 
 	private void loadCommonParams(String[] args) {
 		parameters.loadAllParams(args, CommonJobParameter.values());
+	}
+
+	private void loadJobParams(String[] args) {
+		String jobName = parameters.getParamValue(CommonJobParameter.JOB_NAME);
+		Optional<JobsParameters> paramsFound = JobsParameters.getParamsForJob(jobName);
+		if(paramsFound.isPresent()) {
+			parameters.loadAllParams(args, paramsFound.get().getParameters());
+		}
 	}
 }
