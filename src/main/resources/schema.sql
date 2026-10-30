@@ -22,3 +22,15 @@ CREATE TABLE IF NOT EXISTS SALES_SUMMARY (
   item VARCHAR(250) NOT NULL,
   total_quantity INTEGER(250) DEFAULT NOT NULL
 );
+
+--Run history, one row per job execution (written by RunRecorder)
+CREATE TABLE IF NOT EXISTS JOB_RUN (
+  id VARCHAR(36) PRIMARY KEY,
+  job_name VARCHAR(250) NOT NULL,
+  params VARCHAR(1000),
+  status VARCHAR(20) NOT NULL,
+  started_at TIMESTAMP NOT NULL,
+  finished_at TIMESTAMP,
+  rows_written BIGINT,
+  error VARCHAR(1000)
+);

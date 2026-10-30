@@ -25,11 +25,13 @@ public class SalesSummaryProcessor implements Processor<Dataset<Row>>{
     @Override
     public Dataset<Row> process(Dataset<Row> input) {
         String[] sellers = salesSummaryContext.getParams().getParamValue(SalesSummaryJobParams.SELLER_ID).split(",");
-        List<Row> results = Arrays.stream(sellers).map(seller -> {
-                String sellerId = seller.replaceAll("'", "");
-                Dataset<Row> sellerRows = input.filter(col(SalesSchema.SELLER_ID.name()).equalTo(sellerId));
-                return sellerRows.reduce(new SellerSalesReducer());
-        }).collect(Collectors.toList());
+        List<Row> results = Arrays.stream(sellers)
+                .map(seller -> seller.replaceAll("'", "").trim())
+                .map(sellerId -> input.filter(col(SalesSchema.SELLER_ID.name()).equalTo(sellerId)))
+                // reduce() on an empty Dataset throws; a seller with no sales for the date/product is skipped.
+                .filter(sellerRows -> !sellerRows.isEmpty())
+                .map(sellerRows -> sellerRows.reduce(new SellerSalesReducer()))
+                .collect(Collectors.toList());
         return SparkSessionProvider.provideSession(salesSummaryContext.getSparkMode())
                 .createDataFrame(results, input.schema());
     }

@@ -1,0 +1,7 @@
+target
+legacy
+viewer
+docs
+.git
+.github
+**/node_modules

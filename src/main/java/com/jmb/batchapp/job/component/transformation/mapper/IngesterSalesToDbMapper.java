@@ -5,15 +5,17 @@ import com.jmb.batchapp.persistence.manager.DatabaseConnManager;
 import com.jmb.batchapp.schema.SalesSchema;
 import org.apache.spark.api.java.function.MapPartitionsFunction;
 import org.apache.spark.sql.Row;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
- * Class implements Spark API functionality to persist spark rows corresponding to SALES table to the database.
- *
- * @author JuanMBruno
+ * Batch-inserts a partition's rows into SALES and returns the rows written. The original returned the
+ * already-consumed iterator, so the downstream count() was always 0.
  */
 public class IngesterSalesToDbMapper implements MapPartitionsFunction<Row, Row> {
 
@@ -29,9 +31,9 @@ public class IngesterSalesToDbMapper implements MapPartitionsFunction<Row, Row> 
     }
 
     private Iterator<Row> doRowsBatchInsert(Iterator<Row> iterator) throws SQLException {
+        List<Row> written = new ArrayList<>();
         try (Connection connection = connManager.getDataSource().getConnection();
              PreparedStatement stmt = connection.prepareStatement(IngesterQueries.INSERT_QUERY_SALES)) {
-           //Loop through DataFrame's received rows within the iterator and persist to DB
             while(iterator.hasNext()) {
                 int index = 1;
                 Row row = iterator.next();
@@ -40,13 +42,10 @@ public class IngesterSalesToDbMapper implements MapPartitionsFunction<Row, Row> 
                 stmt.setString(index++, row.getAs(SalesSchema.PRODUCT.name()));
                 stmt.setLong(index++, row.getAs(SalesSchema.QUANTITY.name()));
                 stmt.addBatch();
+                written.add(row);
             }
-            //Once all the rows have been added as batch statements, execute against the DB
             stmt.executeBatch();
-        } catch (SQLException sqlException) {
-            //Do some logging here and re throw Exception
-            throw sqlException;
         }
-        return iterator;
+        return written.iterator();
     }
 }

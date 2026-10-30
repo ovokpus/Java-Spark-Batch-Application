@@ -1,0 +1,78 @@
+{
+  "/health": {
+    "status": "ok",
+    "database": true,
+    "sales": 24,
+    "summaries": 19,
+    "runs": 12
+  },
+  "/api/runs?limit=3": [
+    {
+      "id": "511ea9ac-00cc-4314-a592-2c546150a2ae",
+      "job_name": "salesSummaryJob",
+      "params": "jobName=salesSummaryJob sellerId=Joe date=2020-13-45 product=Beer",
+      "status": "FAILED",
+      "started_at": "2026-10-30T13:48:11.234576",
+      "finished_at": "2026-10-30T13:48:11.240378",
+      "rows_written": null,
+      "error": "IllegalArgumentException: Invalid date '2020-13-45' (expected yyyyMMddHHmmss or yyyy-MM-dd)",
+      "seconds": 0.005802
+    },
+    {
+      "id": "52898185-c466-435a-bb1a-a6d74541f198",
+      "job_name": "salesSummaryJob",
+      "params": "jobName=salesSummaryJob sellerId=Joe,Beth,Janet date=20201112000000 product=Beer",
+      "status": "SUCCEEDED",
+      "started_at": "2026-10-30T13:48:07.063382",
+      "finished_at": "2026-10-30T13:48:09.227093",
+      "rows_written": 2,
+      "error": null,
+      "seconds": 2.163711
+    },
+    {
+      "id": "ef5cfa7b-904b-4139-bdff-a38ff830e8f7",
+      "job_name": "salesSummaryJob",
+      "params": "jobName=salesSummaryJob sellerId=Joe,Beth,Janet date=20201113000000 product=Car",
+      "status": "SUCCEEDED",
+      "started_at": "2026-10-30T13:47:09.817142",
+      "finished_at": "2026-10-30T13:47:11.890590",
+      "rows_written": 1,
+      "error": null,
+      "seconds": 2.073448
+    }
+  ],
+  "/api/summary": [
+    {
+      "seller_id": "Beth",
+      "sales_date": "2020-11-11",
+      "item": "Beer",
+      "total_quantity": 16,
+      "sql_total": 16,
+      "matches": true
+    },
+    {
+      "seller_id": "Janet",
+      "sales_date": "2020-11-11",
+      "item": "Beer",
+      "total_quantity": 18,
+      "sql_total": 18,
+      "matches": true
+    },
+    {
+      "seller_id": "Joe",
+      "sales_date": "2020-11-11",
+      "item": "Beer",
+      "total_quantity": 18,
+      "sql_total": 18,
+      "matches": true
+    },
+    {
+      "seller_id": "Janet",
+      "sales_date": "2020-11-11",
+      "item": "Car",
+      "total_quantity": 19,
+      "sql_total": 19,
+      "matches": true
+    }
+  ]
+}

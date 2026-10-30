@@ -16,11 +16,13 @@ public final class SparkSessionProvider {
 
     private static SparkSession sparkSession;
 
-    public static SparkSession provideSession(String masterMode) {
-
+    public static synchronized SparkSession provideSession(String masterMode) {
         if(Objects.isNull(sparkSession)) {
             SparkSession.Builder sessionBuilder =  SparkSession.builder()
-                    .appName("SparkBatchApp");
+                    .appName("SparkBatchApp")
+                    // Small local jobs: avoid 200 shuffle partitions and the UI port.
+                    .config("spark.sql.shuffle.partitions", System.getProperty("spark.sql.shuffle.partitions", "4"))
+                    .config("spark.ui.enabled", System.getProperty("spark.ui.enabled", "false"));
             if(Objects.nonNull(masterMode)) {
                 sessionBuilder = sessionBuilder.master(masterMode);
             }
@@ -29,4 +31,10 @@ public final class SparkSessionProvider {
         return sparkSession;
     }
 
+    public static synchronized void stop() {
+        if (Objects.nonNull(sparkSession)) {
+            sparkSession.stop();
+            sparkSession = null;
+        }
+    }
 }
