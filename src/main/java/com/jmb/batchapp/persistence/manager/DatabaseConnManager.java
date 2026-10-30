@@ -3,17 +3,24 @@ package com.jmb.batchapp.persistence.manager;
 import com.zaxxer.hikari.HikariDataSource;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
 import javax.sql.DataSource;
 import java.io.Serializable;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Class configures a Database Connection Manager which uses a Connection Pool and provides functionality
- * to retrieve connections based on this.
+ * to retrieve connections based on this. It is serialized into Spark tasks, so the pool is kept in a
+ * static per-JVM cache keyed by URL instead of being created on every call (the original leaked a new
+ * pool per partition).
  *
  * @author JuanMBruno
  */
 @Component
 public class DatabaseConnManager implements Serializable {
+
+    private static final Map<String, HikariDataSource> POOLS = new ConcurrentHashMap<>();
 
     @Value("${spring.datasource.url}")
     private String dbUrl;
@@ -28,16 +35,18 @@ public class DatabaseConnManager implements Serializable {
     private String driver;
 
     public DataSource getDataSource() {
-        HikariDataSource hikariDataSource = new HikariDataSource();
-        hikariDataSource.setJdbcUrl(dbUrl);
-        hikariDataSource.setUsername(username);
-        hikariDataSource.setPassword(password);
-        hikariDataSource.setDriverClassName(driver);
-        return hikariDataSource;
+        return POOLS.computeIfAbsent(dbUrl + "|" + username, key -> {
+            HikariDataSource hikariDataSource = new HikariDataSource();
+            hikariDataSource.setJdbcUrl(dbUrl);
+            hikariDataSource.setUsername(username);
+            hikariDataSource.setPassword(password);
+            hikariDataSource.setDriverClassName(driver);
+            hikariDataSource.setMaximumPoolSize(4);
+            return hikariDataSource;
+        });
     }
 
     //Getters and Setters
-
     public String getDbUrl() {
         return dbUrl;
     }

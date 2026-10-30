@@ -8,14 +8,13 @@ import org.apache.spark.sql.Row;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
- * Class persists the received rows into the SALES_SUMMARY DB table, making a translation between
- * the Row's Spark Schema and the Table structure as needed.
- *
- * @author JuanMBruno.
+ * Writes summary rows to SALES_SUMMARY. Each (seller, date, item) is replaced rather than appended, so a
+ * re-run of the same job is idempotent. Returns the rows written (the original returned a consumed iterator).
  */
 public class SellerSalesDBMapper implements MapPartitionsFunction<Row, Row> {
 
@@ -31,24 +30,29 @@ public class SellerSalesDBMapper implements MapPartitionsFunction<Row, Row> {
     }
 
     private Iterator<Row> doRowsBatchInsert(Iterator<Row> rowIterator) throws Exception {
+        List<Row> written = new ArrayList<>();
         try (Connection connection = connManager.getDataSource().getConnection();
+             PreparedStatement delete = connection.prepareStatement(SalesSummaryQueries.DELETE_SALES_SUMMARY);
              PreparedStatement stmt = connection.prepareStatement(SalesSummaryQueries.INSERT_SALES_SUMMARY)) {
-            //Loop through DataFrame's received rows within the iterator and persist to DB
             while(rowIterator.hasNext()) {
-                int index = 1;
                 Row row = rowIterator.next();
-                stmt.setString(index++, row.getAs(SalesSummarySchema.SELLER_ID.name()));
-                stmt.setDate(index++, row.getAs(SalesSummarySchema.SALES_DATE.name()));
-                stmt.setString(index++, row.getAs(SalesSummarySchema.PRODUCT.name()));
-                stmt.setInt(index++, row.getAs(SalesSummarySchema.QUANTITY.name()));
+                String seller = row.getAs(SalesSummarySchema.SELLER_ID.name());
+                java.sql.Date date = row.getAs(SalesSummarySchema.SALES_DATE.name());
+                String item = row.getAs(SalesSummarySchema.PRODUCT.name());
+                delete.setString(1, seller);
+                delete.setDate(2, date);
+                delete.setString(3, item);
+                delete.addBatch();
+                stmt.setString(1, seller);
+                stmt.setDate(2, date);
+                stmt.setString(3, item);
+                stmt.setInt(4, ((Number) row.getAs(SalesSummarySchema.QUANTITY.name())).intValue());
                 stmt.addBatch();
+                written.add(row);
             }
-            //Once all the rows have been added as batch statements, execute against the DB
+            delete.executeBatch();
             stmt.executeBatch();
-        } catch (SQLException sqlException) {
-            //Do some logging here and re throw Exception
-            throw sqlException;
         }
-        return rowIterator;
+        return written.iterator();
     }
 }

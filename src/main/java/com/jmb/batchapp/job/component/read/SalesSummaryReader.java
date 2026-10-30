@@ -9,6 +9,8 @@ import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import java.util.Arrays;
+import java.util.Locale;
 import java.util.Properties;
 
 /**
@@ -32,12 +34,11 @@ public class SalesSummaryReader implements Reader<Dataset<Row>> {
     //Read using SparkSQL component, DataFrameReader class, fires a query to the SALES table
     @Override
     public Dataset<Row> read() {
-        String sellers =
-                SalesSummaryQueries.buildInClause(salesSummaryContext.getParams().getParamValue(SalesSummaryJobParams.SELLER_ID));
+        String sellers = salesSummaryContext.getParams().getParamValue(SalesSummaryJobParams.SELLER_ID);
         String date = salesSummaryContext.getParams().getParamValue(SalesSummaryJobParams.DATE);
         String product = salesSummaryContext.getParams().getParamValue(SalesSummaryJobParams.PRODUCT);
-        //Replace params passed and construct query
-        String salesRetrieveQuery = String.format(SalesSummaryQueries.SALES_PER_SELLER_ID_DATE_PROD, date, product, sellers);
+        //Validate params and construct query
+        String salesRetrieveQuery = SalesSummaryQueries.buildSalesQuery(date, product, sellers);
         return getDatasetFromDbTable(salesRetrieveQuery);
     }
 
@@ -45,7 +46,10 @@ public class SalesSummaryReader implements Reader<Dataset<Row>> {
         Properties properties = new Properties();
         properties.put("user", databaseConnManager.getUsername());
         properties.put("password", databaseConnManager.getPassword());
-        return SparkSessionProvider.provideSession(salesSummaryContext.getSparkMode())
+        properties.put("driver", databaseConnManager.getDriver());
+        Dataset<Row> df = SparkSessionProvider.provideSession(salesSummaryContext.getSparkMode())
                 .read().jdbc(databaseConnManager.getDbUrl(), "(" + query + ") sales_alias", properties);
+        // PostgreSQL reports lower-case column names (H2 upper-case); Row.getAs is case-sensitive.
+        return df.toDF(Arrays.stream(df.columns()).map(c -> c.toUpperCase(Locale.ROOT)).toArray(String[]::new));
     }
 }
