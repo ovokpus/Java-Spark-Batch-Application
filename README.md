@@ -1,5 +1,7 @@
 # ⚡ Java Spark Batch Application
 
+<p align="center"><img src="docs/assets/hero.svg" alt="Java Spark Batch Application" width="100%"/></p>
+
 **A Spark (Java API) batch template, now running end to end with one command, with run history you can see.**
 
 `docker compose up` → PostgreSQL → **Spark ingestion job** (JSON → `SALES`) → **9 Spark summary jobs** (per seller, date and product → `SALES_SUMMARY`) → a read-only **FastAPI + React** viewer on `:8080` that shows every run and checks Spark's totals against plain SQL.
@@ -20,6 +22,8 @@ This is a template from the *Apache Spark for Java Developers* course ([original
 Originally it only ran inside the course sandbox (`legacy/input.sh`), against an in-memory H2 database that disappeared after each run.
 
 ## 2. Architecture
+
+<p align="center"><img src="docs/assets/flow.svg" alt="Java Spark Batch Application data flow" width="100%"/></p>
 
 ```mermaid
 flowchart LR
