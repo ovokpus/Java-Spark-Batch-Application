@@ -1,0 +1,3 @@
+# Copy to terraform.tfvars (git-ignored) and edit. Placeholders only.
+region = "us-east-1"
+image_tag = "v1"
