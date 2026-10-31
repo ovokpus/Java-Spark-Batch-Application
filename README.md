@@ -1,5 +1,7 @@
 # ⚡ Java Spark Batch Application
 
+<p align="center"><img src="assets/banner.jpg" alt="Stacked paper trays and a brass stapler leading to a small conveyor belt and a copper spool" width="100%"></p>
+
 <p align="center"><img src="docs/assets/hero.svg" alt="Java Spark Batch Application" width="100%"/></p>
 
 **A Spark (Java API) batch template, now running end to end with one command, with run history you can see.**
