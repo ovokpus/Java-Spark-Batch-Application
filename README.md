@@ -10,6 +10,10 @@
 
 ---
 
+## Business case
+
+Batch jobs written as one-off scripts are hard to re-run and audit. This Spring Boot and Spark template gives every job the same Reader, Processor and Writer shape, a config table and a run log, and its viewer checks Spark's totals against plain SQL. It suits Java teams that want their batch jobs to look the same. [docs/BUSINESS_CASE.md](docs/BUSINESS_CASE.md) covers the use cases, an illustrative ROI model and the limits.
+
 ## 1. The project
 
 This is a template from the *Apache Spark for Java Developers* course ([original README](docs/ORIGINAL_README.md)). It's a Spring Boot command-line app where each job follows the **Reader → Processor → Writer** pattern on Spark:
